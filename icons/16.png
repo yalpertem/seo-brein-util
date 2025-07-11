@@ -1,0 +1,12 @@
+# Placeholder for 16x16 icon
+# In a real extension, this would be a PNG file
+# You can replace this with actual icon files
+
+# To create proper icons:
+# 1. Design a 128x128 icon (high resolution)
+# 2. Create scaled versions: 16x16, 48x48, 128x128
+# 3. Save as PNG files with transparency
+# 4. Replace these placeholder files
+
+# Icon should represent translation/language conversion
+# Suggested design: Globe with "A→あ" or similar translation symbol
