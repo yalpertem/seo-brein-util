@@ -19,7 +19,7 @@
                 "file://*/*"
             ],
             "js": [
-                "contentScript.js"
+                "content-script.js"
             ],
             "run_at": "document_end",
             "all_frames": true

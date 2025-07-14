@@ -1,0 +1,3 @@
+- Do not write comments unless it is very necessary. Don't explain the code if it is not complex.
+- Try to keep the code short and concise.
+- When fixing bugs, if you're not sure, try add logging first to understand the issue.
