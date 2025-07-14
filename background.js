@@ -3,6 +3,43 @@
  * Handles fallback translation using Google Cloud Translate API
  */
 
+// Translation counters
+let TRANSLATIONS_FROM_API_COUNT = 0;
+let TRANSLATIONS_FROM_CACHE_COUNT = 0;
+let countersLoaded = false;
+
+// Load counters from storage
+async function loadCounters() {
+  try {
+    const result = await chrome.storage.local.get(["translationCounters"]);
+    if (result.translationCounters) {
+      TRANSLATIONS_FROM_API_COUNT = result.translationCounters.api || 0;
+      TRANSLATIONS_FROM_CACHE_COUNT = result.translationCounters.cache || 0;
+    }
+    countersLoaded = true;
+  } catch (error) {
+    console.warn("Failed to load counters from storage:", error);
+    countersLoaded = true;
+  }
+}
+
+// Save counters to storage
+async function saveCounters() {
+  try {
+    await chrome.storage.local.set({
+      translationCounters: {
+        api: TRANSLATIONS_FROM_API_COUNT,
+        cache: TRANSLATIONS_FROM_CACHE_COUNT,
+      },
+    });
+  } catch (error) {
+    console.warn("Failed to save counters to storage:", error);
+  }
+}
+
+// Initialize counters
+loadCounters();
+
 // TODO: Add your Google Cloud Translate API key here
 const GOOGLE_TRANSLATE_API_KEY = "YOUR_API_KEY_HERE";
 const GOOGLE_TRANSLATE_URL =
@@ -13,8 +50,50 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "translate") {
     handleTranslationRequest(request, sendResponse);
     return true; // Keep the message channel open for async response
+  } else if (request.action === "resetCounters") {
+    resetCounters();
+    sendResponse({ success: true });
+  } else if (request.action === "logCounts") {
+    logTranslationCounts();
+    sendResponse({ success: true });
+  } else if (request.action === "incrementCacheCount") {
+    incrementCacheCount();
+    sendResponse({ success: true });
+  } else if (request.action === "clearCache") {
+    clearCache();
+    sendResponse({ success: true });
   }
 });
+
+function resetCounters() {
+  TRANSLATIONS_FROM_API_COUNT = 0;
+  TRANSLATIONS_FROM_CACHE_COUNT = 0;
+  saveCounters();
+  console.log("Background: Translation counters reset");
+}
+
+function incrementCacheCount() {
+  TRANSLATIONS_FROM_CACHE_COUNT++;
+  saveCounters();
+  console.log(
+    `Background: Cache count incremented to ${TRANSLATIONS_FROM_CACHE_COUNT}`
+  );
+}
+
+function logTranslationCounts() {
+  console.log(
+    `Background: Translation counts - API: ${TRANSLATIONS_FROM_API_COUNT}, Cache: ${TRANSLATIONS_FROM_CACHE_COUNT}`
+  );
+}
+
+async function clearCache() {
+  try {
+    await chrome.storage.local.remove(["translationCache"]);
+    console.log("Background: Translation cache cleared");
+  } catch (error) {
+    console.warn("Background: Failed to clear cache:", error);
+  }
+}
 
 async function handleTranslationRequest(request, sendResponse) {
   try {
@@ -90,6 +169,11 @@ async function translateWithGoogleCloud(text, sourceLang, targetLang, apiKey) {
 
     // Parse the response from Google Translate
     if (data && data[0] && data[0][0] && data[0][0][0]) {
+      TRANSLATIONS_FROM_API_COUNT++;
+      saveCounters();
+      console.log(
+        `Background: API count incremented to ${TRANSLATIONS_FROM_API_COUNT}`
+      );
       return data[0][0][0];
     }
 

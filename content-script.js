@@ -10,6 +10,10 @@ class SEOBreinTranslator {
     this.processedNodes = new WeakSet();
     this.translationCache = new Map();
     this.observer = null;
+    this.cacheLoaded = false;
+    this.cacheDirty = false;
+    this.saveTimeout = null;
+    this.maxCacheSize = 1000;
 
     // Target selectors for elements to translate
     this.targetSelectors = ["div.post__body"];
@@ -30,6 +34,16 @@ class SEOBreinTranslator {
       `[${new Date().toISOString()}] SEO Brein Translator: Document ready state:`,
       document.readyState
     );
+
+    // Load cache from storage first
+    await this.loadCacheFromStorage();
+
+    // Reset translation counters
+    try {
+      chrome.runtime.sendMessage({ action: "resetCounters" });
+    } catch (error) {
+      console.warn("Failed to reset counters:", error);
+    }
 
     // Make translator globally accessible for debugging
     window.translator = this;
@@ -205,6 +219,13 @@ class SEOBreinTranslator {
       console.log(
         `[${new Date().toISOString()}] SEO Brein Translator: Translation complete. Processed: ${processedCount}, Successfully translated: ${translatedCount}`
       );
+
+      // Log translation counts
+      try {
+        chrome.runtime.sendMessage({ action: "logCounts" });
+      } catch (error) {
+        console.warn("Failed to log counts:", error);
+      }
     } catch (error) {
       console.error(
         `[${new Date().toISOString()}] SEO Brein Translator: Error during page translation:`,
@@ -230,6 +251,15 @@ class SEOBreinTranslator {
       console.log(
         `[${new Date().toISOString()}] SEO Brein Translator: Batch complete. Successful: ${successful}, Failed: ${failed}`
       );
+
+      // Log translation counts after each batch
+      if (successful > 0) {
+        try {
+          chrome.runtime.sendMessage({ action: "logCounts" });
+        } catch (error) {
+          console.warn("Failed to log counts:", error);
+        }
+      }
     }
 
     return results.map((r) => (r.status === "fulfilled" ? r.value : false));
@@ -281,6 +311,11 @@ class SEOBreinTranslator {
   async translateText(text) {
     // Check cache first
     if (this.translationCache.has(text)) {
+      try {
+        chrome.runtime.sendMessage({ action: "incrementCacheCount" });
+      } catch (error) {
+        console.warn("Failed to increment cache count:", error);
+      }
       return this.translationCache.get(text);
     }
 
@@ -306,9 +341,76 @@ class SEOBreinTranslator {
     // Cache the result
     if (translatedText) {
       this.translationCache.set(text, translatedText);
+
+      // Limit cache size
+      if (this.translationCache.size > this.maxCacheSize) {
+        const firstKey = this.translationCache.keys().next().value;
+        this.translationCache.delete(firstKey);
+      }
+
+      this.scheduleCacheSave();
     }
 
     return translatedText;
+  }
+
+  scheduleCacheSave() {
+    this.cacheDirty = true;
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+    }
+    this.saveTimeout = setTimeout(() => {
+      if (this.cacheDirty) {
+        this.saveCacheToStorage();
+        this.cacheDirty = false;
+      }
+    }, 2000);
+  }
+
+  async loadCacheFromStorage() {
+    try {
+      const result = await chrome.storage.local.get(["translationCache"]);
+      if (result.translationCache) {
+        this.translationCache = new Map(
+          Object.entries(result.translationCache)
+        );
+        console.log(`Loaded ${this.translationCache.size} cached translations`);
+      }
+      this.cacheLoaded = true;
+    } catch (error) {
+      console.warn("Failed to load cache from storage:", error);
+      this.cacheLoaded = true;
+    }
+  }
+
+  async saveCacheToStorage() {
+    try {
+      const cacheObject = Object.fromEntries(this.translationCache);
+      await chrome.storage.local.set({ translationCache: cacheObject });
+    } catch (error) {
+      console.warn("Failed to save cache to storage:", error);
+    }
+  }
+
+  async clearCache() {
+    try {
+      this.translationCache.clear();
+      await chrome.storage.local.remove(["translationCache"]);
+      console.log("Translation cache cleared");
+    } catch (error) {
+      console.warn("Failed to clear cache:", error);
+    }
+  }
+
+  getCacheSize() {
+    return this.translationCache.size;
+  }
+
+  getCacheStats() {
+    return {
+      size: this.translationCache.size,
+      entries: Array.from(this.translationCache.entries()).slice(0, 5),
+    };
   }
 
   async fallbackTranslate(text) {
