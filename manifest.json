@@ -1,22 +1,20 @@
 {
     "manifest_version": 3,
-    "name": "SEO Brein Translator (Test Mode)",
+    "name": "SEO Brein Translator",
     "version": "1.0.0",
-    "description": "Automatically translates community.seobrein.nl content to English using Chrome's Translation API - TEST MODE",
+    "description": "Automatically translates community.seobrein.nl content to English using Chrome's Translation API",
     "permissions": [
         "storage",
         "activeTab"
     ],
     "host_permissions": [
         "https://community.seobrein.nl/*",
-        "https://translate.googleapis.com/*",
-        "file://*/*"
+        "https://translate.googleapis.com/*"
     ],
     "content_scripts": [
         {
             "matches": [
-                "https://community.seobrein.nl/*",
-                "file://*/*"
+                "https://community.seobrein.nl/*"
             ],
             "js": [
                 "contentScript.js"

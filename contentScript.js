@@ -17,9 +17,18 @@ class SEOBreinTranslator {
 
   async init() {
     console.log("SEO Brein Translator: Initializing...");
+    console.log("SEO Brein Translator: Current URL:", window.location.href);
+    console.log(
+      "SEO Brein Translator: Document ready state:",
+      document.readyState
+    );
+
+    // Make translator globally accessible for debugging
+    window.translator = this;
 
     // Wait for page to be fully loaded
     if (document.readyState === "loading") {
+      console.log("SEO Brein Translator: Waiting for DOMContentLoaded...");
       document.addEventListener("DOMContentLoaded", () =>
         this.startTranslation()
       );
@@ -39,6 +48,9 @@ class SEOBreinTranslator {
       // Set up observer for dynamic content
       this.setupMutationObserver();
 
+      // Add periodic re-scan for feeds that load content dynamically
+      this.setupPeriodicRescan();
+
       console.log("SEO Brein Translator: Translation setup complete");
     } catch (error) {
       console.error(
@@ -46,6 +58,37 @@ class SEOBreinTranslator {
         error
       );
     }
+  }
+
+  setupPeriodicRescan() {
+    // Rescan the page every 5 seconds for the first minute to catch dynamically loaded content
+    let rescanCount = 0;
+    const maxRescans = 12; // 12 * 5 seconds = 1 minute
+
+    const rescanInterval = setInterval(async () => {
+      rescanCount++;
+      console.log(
+        `SEO Brein Translator: Periodic rescan ${rescanCount}/${maxRescans}`
+      );
+
+      // Get all text nodes and see if there are new ones to translate
+      const allTextNodes = this.getTextNodes(document.body);
+      const unprocessedNodes = allTextNodes.filter(
+        (node) => !this.processedNodes.has(node)
+      );
+
+      if (unprocessedNodes.length > 0) {
+        console.log(
+          `SEO Brein Translator: Found ${unprocessedNodes.length} new unprocessed nodes during rescan`
+        );
+        await this.processBatch(unprocessedNodes);
+      }
+
+      if (rescanCount >= maxRescans) {
+        clearInterval(rescanInterval);
+        console.log("SEO Brein Translator: Periodic rescanning complete");
+      }
+    }, 5000);
   }
 
   async initializeTranslator() {
@@ -77,25 +120,69 @@ class SEOBreinTranslator {
   }
 
   async translatePage() {
-    if (this.isTranslating) return;
+    if (this.isTranslating) {
+      console.log(
+        "SEO Brein Translator: Translation already in progress, skipping..."
+      );
+      return;
+    }
     this.isTranslating = true;
 
     try {
+      console.log("SEO Brein Translator: Starting page translation...");
+
       // Get all text nodes in the document
       const textNodes = this.getTextNodes(document.body);
       console.log(
         `SEO Brein Translator: Found ${textNodes.length} text nodes to process`
       );
 
+      // Log some sample text nodes for debugging
+      const sampleNodes = textNodes.slice(0, 5).map((node) => ({
+        text: node.textContent.trim().substring(0, 100),
+        parent: node.parentElement?.tagName || "unknown",
+        isVisible: node.parentElement
+          ? window.getComputedStyle(node.parentElement).display !== "none"
+          : false,
+      }));
+      console.log("SEO Brein Translator: Sample text nodes:", sampleNodes);
+
+      if (textNodes.length === 0) {
+        console.warn(
+          "SEO Brein Translator: No text nodes found! This might indicate a problem with content detection."
+        );
+        return;
+      }
+
       // Process nodes in batches to avoid overwhelming the browser
       const batchSize = 20;
+      let processedCount = 0;
+      let translatedCount = 0;
+
       for (let i = 0; i < textNodes.length; i += batchSize) {
         const batch = textNodes.slice(i, i + batchSize);
-        await this.processBatch(batch);
+        console.log(
+          `SEO Brein Translator: Processing batch ${
+            Math.floor(i / batchSize) + 1
+          }/${Math.ceil(textNodes.length / batchSize)} (${batch.length} nodes)`
+        );
+
+        const results = await this.processBatch(batch);
+        processedCount += batch.length;
+        translatedCount += results.filter((r) => r).length;
 
         // Small delay between batches
         await this.delay(50);
       }
+
+      console.log(
+        `SEO Brein Translator: Translation complete. Processed: ${processedCount}, Successfully translated: ${translatedCount}`
+      );
+    } catch (error) {
+      console.error(
+        "SEO Brein Translator: Error during page translation:",
+        error
+      );
     } finally {
       this.isTranslating = false;
     }
@@ -103,30 +190,73 @@ class SEOBreinTranslator {
 
   async processBatch(textNodes) {
     const promises = textNodes.map((node) => this.translateTextNode(node));
-    await Promise.allSettled(promises);
+    const results = await Promise.allSettled(promises);
+
+    // Count successful translations for debugging
+    const successful = results.filter(
+      (r) => r.status === "fulfilled" && r.value
+    ).length;
+    const failed = results.filter((r) => r.status === "rejected").length;
+
+    if (failed > 0) {
+      console.log(
+        `SEO Brein Translator: Batch complete. Successful: ${successful}, Failed: ${failed}`
+      );
+    }
+
+    return results.map((r) => (r.status === "fulfilled" ? r.value : false));
   }
 
   async translateTextNode(node) {
-    if (this.processedNodes.has(node)) return;
+    if (this.processedNodes.has(node)) {
+      return false;
+    }
 
     const text = node.textContent.trim();
-    if (!text || text.length < 3) return;
+    if (!text || text.length < 3) {
+      return false;
+    }
 
     // Skip if text appears to be already in English or contains mostly numbers/symbols
-    if (this.isLikelyEnglish(text)) return;
+    if (this.isLikelyEnglish(text)) {
+      return false;
+    }
 
     try {
+      console.log(
+        `SEO Brein Translator: Attempting to translate: "${text.substring(
+          0,
+          50
+        )}${text.length > 50 ? "..." : ""}"`
+      );
+
       const translatedText = await this.translateText(text);
       if (translatedText && translatedText !== text) {
+        console.log(
+          `SEO Brein Translator: Translation successful: "${text.substring(
+            0,
+            30
+          )}..." -> "${translatedText.substring(0, 30)}..."`
+        );
         node.textContent = translatedText;
         this.processedNodes.add(node);
+        return true;
+      } else {
+        console.log(
+          `SEO Brein Translator: No translation needed or failed for: "${text.substring(
+            0,
+            50
+          )}..."`
+        );
+        return false;
       }
     } catch (error) {
       console.warn(
         "SEO Brein Translator: Failed to translate text:",
-        text,
+        text.substring(0, 50),
         error
       );
+      return false;
     }
   }
 
@@ -252,8 +382,19 @@ class SEOBreinTranslator {
 
       if (newTextNodes.length > 0) {
         console.log(
-          `SEO Brein Translator: Processing ${newTextNodes.length} new text nodes`
+          `SEO Brein Translator: Mutation observer detected ${newTextNodes.length} new text nodes`
         );
+
+        // Log sample of new content for debugging
+        const samples = newTextNodes
+          .slice(0, 3)
+          .map((node) => node.textContent.trim().substring(0, 50))
+          .filter((text) => text.length > 0);
+
+        if (samples.length > 0) {
+          console.log("SEO Brein Translator: Sample new content:", samples);
+        }
+
         this.processBatch(newTextNodes);
       }
     });
@@ -270,6 +411,25 @@ class SEOBreinTranslator {
 
   delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  // Manual translation trigger for debugging
+  async forceRetranslate() {
+    console.log("SEO Brein Translator: Force re-translation triggered");
+    this.processedNodes = new WeakSet(); // Clear processed nodes
+    this.translationCache.clear(); // Clear cache
+    await this.translatePage();
+  }
+
+  // Get translation stats for debugging
+  getStats() {
+    const allTextNodes = this.getTextNodes(document.body);
+    return {
+      totalTextNodes: allTextNodes.length,
+      cacheSize: this.translationCache.size,
+      isTranslating: this.isTranslating,
+      hasTranslator: !!this.translator,
+    };
   }
 
   // Cleanup method (called when page unloads)
