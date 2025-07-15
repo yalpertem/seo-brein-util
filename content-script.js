@@ -71,33 +71,48 @@ class SEOBreinTranslator {
 
   setupPeriodicRescan() {
     let rescanCount = 0;
-    const maxRescans = 6;
+    const maxRescans = 12;
+    const intervals = [
+      2000, 3000, 5000, 7000, 10000, 15000, 20000, 30000, 45000, 60000, 90000,
+      120000,
+    ];
 
-    const rescanInterval = setInterval(async () => {
-      rescanCount++;
-      const allTextNodes = this.getTextNodesFromTargets();
-      const unprocessedNodes = allTextNodes.filter(
-        (node) => !this.processedNodes.has(node)
-      );
-
-      if (unprocessedNodes.length > 0) {
-        console.debug(
-          `[${new Date().toISOString()}] SBT: Rescan ${rescanCount}/${maxRescans} - Found ${
-            unprocessedNodes.length
-          } new nodes`
-        );
-        const batch = unprocessedNodes.slice(0, 20);
-        await this.processBatch(batch);
-        unprocessedNodes.forEach((node) => this.processedNodes.add(node));
-      }
-
+    const scheduleNextRescan = () => {
       if (rescanCount >= maxRescans) {
-        clearInterval(rescanInterval);
         console.debug(
-          `[${new Date().toISOString()}] SBT: Periodic rescanning complete`
+          `[${new Date().toISOString()}] SBT: Periodic rescanning complete after ${rescanCount} rescans`
         );
+        return;
       }
-    }, 5000);
+
+      const delay = intervals[rescanCount] || 30000;
+      setTimeout(async () => {
+        rescanCount++;
+        const allTextNodes = this.getTextNodesFromTargets();
+        const unprocessedNodes = allTextNodes.filter(
+          (node) => !this.processedNodes.has(node)
+        );
+
+        if (unprocessedNodes.length > 0) {
+          console.debug(
+            `[${new Date().toISOString()}] SBT: Rescan ${rescanCount}/${maxRescans} - Found ${
+              unprocessedNodes.length
+            } new nodes`
+          );
+          const batch = unprocessedNodes.slice(0, 30);
+          await this.processBatch(batch);
+          batch.forEach((node) => this.processedNodes.add(node));
+        } else {
+          console.debug(
+            `[${new Date().toISOString()}] SBT: Rescan ${rescanCount}/${maxRescans} - No new nodes found`
+          );
+        }
+
+        scheduleNextRescan();
+      }, delay);
+    };
+
+    scheduleNextRescan();
   }
 
   async translatePage() {
@@ -419,6 +434,7 @@ class SEOBreinTranslator {
   setupMutationObserver() {
     this.observer = new MutationObserver((mutations) => {
       const newTextNodes = [];
+      let hasSignificantChanges = false;
 
       mutations.forEach((mutation) => {
         if (mutation.type === "childList") {
@@ -429,6 +445,9 @@ class SEOBreinTranslator {
               }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
               const targetElements = this.getTargetElementsFromNode(node);
+              if (targetElements.length > 0) {
+                hasSignificantChanges = true;
+              }
               targetElements.forEach((element) => {
                 const textNodes = this.getTextNodes(element);
                 newTextNodes.push(...textNodes);
@@ -444,8 +463,26 @@ class SEOBreinTranslator {
             newTextNodes.length
           } new text nodes in target elements`
         );
-        const batch = newTextNodes.slice(0, 20);
+        const batch = newTextNodes.slice(0, 30);
         this.processBatch(batch);
+      }
+
+      if (hasSignificantChanges) {
+        setTimeout(() => {
+          const allTextNodes = this.getTextNodesFromTargets();
+          const unprocessedNodes = allTextNodes.filter(
+            (node) => !this.processedNodes.has(node)
+          );
+          if (unprocessedNodes.length > 0) {
+            console.debug(
+              `[${new Date().toISOString()}] SBT: Delayed scan found ${
+                unprocessedNodes.length
+              } additional nodes`
+            );
+            const batch = unprocessedNodes.slice(0, 30);
+            this.processBatch(batch);
+          }
+        }, 1000);
       }
     });
 
