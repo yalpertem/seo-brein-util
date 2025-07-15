@@ -6,6 +6,8 @@ A Chrome extension (Manifest V3) that automatically translates Dutch content to 
 
 Google Translate is able to translate most of the content, but some parts are not translated correctly. This extension aims to fix those issues by providing a custom translation for specific elements.
 
+![SEO Brein Util Demo](./docs/seo-brein-util.gif)
+
 ## Features
 
 - **Configurable CSS Selectors**: Customize which elements to translate through the options page
