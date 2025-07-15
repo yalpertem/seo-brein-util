@@ -1,6 +1,6 @@
-Privacy Policy for SEO Brein Translator
+# Privacy Policy for SEO Brein Translator
 
-This extension does not collect, store, or transmit any personal user data. 
+This extension does not collect or store any personal user data. 
 
 Data Usage:
 - Translation requests are sent to Google Translate API
