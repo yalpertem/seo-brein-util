@@ -42,20 +42,18 @@ jobs:
     needs: check-version
     if: needs.check-version.outputs.version-changed == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
       - name: Create Release
-        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ needs.check-version.outputs.new-version }}
-          release_name: Release v${{ needs.check-version.outputs.new-version }}
-          body: |
-            Release v${{ needs.check-version.outputs.new-version }}
+        run: |
+          gh release create v${{ needs.check-version.outputs.new-version }} \
+            --title "Release v${{ needs.check-version.outputs.new-version }}" \
+            --notes "Release v${{ needs.check-version.outputs.new-version }}
 
-            Changes in this release:
-            - Version updated to ${{ needs.check-version.outputs.new-version }}
-          draft: false
-          prerelease: false
+          Changes in this release:
+          - Version updated to ${{ needs.check-version.outputs.new-version }}"
