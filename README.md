@@ -17,7 +17,7 @@ Google Translate is able to translate most of the content, but some parts are no
 
 1. Right-click the extension icon and select "Options"
 2. Configure the CSS selectors that should be translated (one per line)
-3. The default selector is `div.post__post` but you can add more as needed
+3. The default selector is hardcoded in code, but you can add more as needed
 4. Click "Save Settings" to apply changes
 
 ## Local Installation

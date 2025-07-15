@@ -10,7 +10,11 @@ class SEOBreinTranslator {
     this.saveTimeout = null;
     this.maxCacheSize = 2000;
 
-    this.selectorsToTranslate = ["div.post__post"];
+    this.selectorsToTranslate = [
+      "div.post--parent",
+      "div.post__content",
+      "div.post__body",
+    ];
     this.init();
   }
 
