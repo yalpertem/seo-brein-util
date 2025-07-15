@@ -108,7 +108,6 @@ class SEOBreinTranslator {
         `[${new Date().toISOString()}] SBT: Starting page translation...`
       );
 
-      // Get all text nodes from target elements only
       const textNodes = this.getTextNodesFromTargets();
       console.log(
         `[${new Date().toISOString()}] SBT: Found ${
@@ -116,7 +115,6 @@ class SEOBreinTranslator {
         } text nodes to process from target elements`
       );
 
-      // Log target elements found for debugging
       const targetElements = this.getTargetElements();
       console.log(
         `[${new Date().toISOString()}] SBT: Found ${
@@ -134,9 +132,8 @@ class SEOBreinTranslator {
         return;
       }
 
-      // Process nodes in batches to avoid overwhelming the browser
       const batchSize = 20;
-      const maxBatches = 2; // Limit to 2 batches to reduce console logs
+      const maxBatches = 2;
       let processedCount = 0;
       let translatedCount = 0;
 
@@ -150,8 +147,6 @@ class SEOBreinTranslator {
         const results = await this.processBatch(batch);
         processedCount += batch.length;
         translatedCount += results.filter((r) => r).length;
-
-        // Small delay between batches
         await this.delay(50);
       }
 
@@ -159,7 +154,6 @@ class SEOBreinTranslator {
         `[${new Date().toISOString()}] SBT: Translation complete. Processed: ${processedCount}, Successfully translated: ${translatedCount}`
       );
 
-      // Log translation counts
       try {
         chrome.runtime.sendMessage({ action: "logCounts" });
       } catch (error) {
@@ -330,7 +324,6 @@ class SEOBreinTranslator {
 
   async fallbackTranslate(text) {
     try {
-      // Send message to background script for Google Cloud Translate fallback
       const response = await chrome.runtime.sendMessage({
         action: "translate",
         text: text,
@@ -423,12 +416,10 @@ class SEOBreinTranslator {
         if (mutation.type === "childList") {
           mutation.addedNodes.forEach((node) => {
             if (node.nodeType === Node.TEXT_NODE) {
-              // Check if this text node is within a target element
               if (this.isWithinTargetElement(node)) {
                 newTextNodes.push(node);
               }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
-              // Check if this element contains target elements or is a target element
               const targetElements = this.getTargetElementsFromNode(node);
               targetElements.forEach((element) => {
                 const textNodes = this.getTextNodes(element);
@@ -445,7 +436,6 @@ class SEOBreinTranslator {
             newTextNodes.length
           } new text nodes in target elements`
         );
-        // Process only 1 batch for mutation observer
         const batch = newTextNodes.slice(0, 20);
         this.processBatch(batch);
       }

@@ -179,25 +179,17 @@
         <div class="section">
             <div class="info-box">
                 <h3>How it works</h3>
-                <p>This extension automatically translates Dutch content to English on community.seobrein.nl using
-                    Google Cloud Translate API. Enter your API key below to enable translation functionality.</p>
+                <p>This extension automatically translates Dutch content to English on community.seobrein.nl using an
+                    unofficial Google Translate service.</p>
             </div>
         </div>
 
         <div class="section">
             <h2>Translation Settings</h2>
-
-            <label for="apiKey">Google Cloud Translate API Key</label>
-            <input type="password" id="apiKey" placeholder="Enter your Google Cloud Translate API key">
-            <p class="small-text">
-                Required for translation functionality. Can be left empty initially.
-                Get your API key from the <a href="https://console.cloud.google.com/apis/credentials"
-                    target="_blank">Google Cloud Console</a>.
-            </p>
+            <p>The extension is automatically configured and ready to use. No additional setup required.</p>
 
             <div class="button-group">
-                <button id="saveBtn" class="btn-primary">Save Settings</button>
-                <button id="testBtn" class="btn-secondary">Test Translation</button>
+                <button id="testBtn" class="btn-primary">Test Translation</button>
             </div>
 
             <div id="status" class="status hidden"></div>
@@ -207,8 +199,8 @@
             <h2>Usage Instructions</h2>
             <ol>
                 <li>Navigate to any page on <span class="code">community.seobrein.nl</span></li>
-                <li>Make sure Chrome's built-in translator already translates the page to English</li>
                 <li>The extension will automatically detect and translate Dutch content to English</li>
+                <li>Translation happens in the background without any user interaction needed</li>
             </ol>
         </div>
 
@@ -218,8 +210,8 @@
                 <li><strong>Translations not working:</strong> Check browser console for errors (F12 → Console)</li>
                 <li><strong>Slow performance:</strong> Large pages may take time to translate completely</li>
                 <li><strong>Mixed languages:</strong> Some content may not translate if already detected as English</li>
-                <li><strong>API errors:</strong> Verify your Google Cloud Translate API key is valid and has sufficient
-                    quota</li>
+                <li><strong>Service errors:</strong> The unofficial Google Translate service may occasionally be
+                    unavailable</li>
             </ul>
         </div>
     </div>
