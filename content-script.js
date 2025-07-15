@@ -25,6 +25,7 @@ class SEOBreinTranslator {
       document.readyState
     );
 
+    await this.loadSelectorsFromStorage();
     await this.loadCacheFromStorage();
 
     try {
@@ -33,6 +34,7 @@ class SEOBreinTranslator {
       console.warn("Failed to reset counters:", error);
     }
 
+    this.setupMessageListener();
     window.translator = this;
 
     if (document.readyState === "loading") {
@@ -509,6 +511,38 @@ class SEOBreinTranslator {
     if (this.translator && this.translator.destroy) {
       this.translator.destroy();
     }
+  }
+
+  async loadSelectorsFromStorage() {
+    try {
+      const result = await chrome.storage.local.get(["selectorsToTranslate"]);
+      if (
+        result.selectorsToTranslate &&
+        Array.isArray(result.selectorsToTranslate)
+      ) {
+        this.selectorsToTranslate = result.selectorsToTranslate;
+        console.log(
+          `[${new Date().toISOString()}] SBT: Loaded selectors:`,
+          this.selectorsToTranslate
+        );
+      }
+    } catch (error) {
+      console.warn("Failed to load selectors from storage:", error);
+    }
+  }
+
+  setupMessageListener() {
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.action === "updateSelectors") {
+        this.selectorsToTranslate = request.selectors;
+        console.log(
+          `[${new Date().toISOString()}] SBT: Updated selectors:`,
+          this.selectorsToTranslate
+        );
+        this.processedNodes = new WeakSet();
+        this.startTranslation();
+      }
+    });
   }
 }
 

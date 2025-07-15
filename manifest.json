@@ -2,10 +2,11 @@
     "manifest_version": 3,
     "name": "SEO Brein Translator",
     "version": "0.0.1",
-    "description": "Automatically translates community.seobrein.nl content to English using Chrome's Translation API",
+    "description": "A companion to Chrome's translation features for translating community.seobrein.nl content to English.",
     "permissions": [
         "storage",
-        "activeTab"
+        "activeTab",
+        "tabs"
     ],
     "host_permissions": [
         "https://community.seobrein.nl/*",
