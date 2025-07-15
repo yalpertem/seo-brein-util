@@ -57,6 +57,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             max-width: 800px;
+            min-width: 500px;
             margin: 0 auto;
             padding: 20px;
             background-color: var(--bg-color);
@@ -297,7 +298,8 @@
         <div class="header">
             <div class="header-content">
                 <h1>SEO Brein Translator</h1>
-                <p class="subtitle">Automatically translate community.seobrein.nl content to English</p>
+                <p class="subtitle">A companion to Chrome's translation features for translating community.seobrein.nl
+                    content to English.</p>
             </div>
             <button class="theme-toggle" id="themeToggle">🌙 Dark Mode</button>
         </div>
@@ -305,17 +307,17 @@
         <div class="section">
             <div class="info-box">
                 <h3>How it works</h3>
-                <p>This extension automatically translates Dutch content to English on community.seobrein.nl using an
+                <p>This extension automatically translates Dutch content to English on community.seobrein.nl using the
                     unofficial Google Translate service.</p>
             </div>
         </div>
 
         <div class="section">
-            <h2>Translation Settings</h2>
+            <h2>Settings</h2>
 
             <div class="info-box">
                 <h3>Chrome Auto-Translate Compatibility</h3>
-                <p>This extension works great with Chrome's built-in auto-translate feature. Chrome will handle most of
+                <p>This extension works best with Chrome's built-in auto-translate feature. Chrome will handle most of
                     the page translation, and this extension will specifically target elements that might be missed by
                     Chrome's auto-translate.</p>
             </div>
@@ -326,7 +328,7 @@
                 line.</p>
 
             <div class="button-group">
-                <button id="saveBtn" class="btn-primary">Save Settings</button>
+                <button id="saveBtn" class="btn-primary">Save</button>
                 <button id="testBtn" class="btn-secondary">Test Translation</button>
             </div>
 
@@ -338,25 +340,20 @@
             <ol>
                 <li>Configure the CSS selectors above to target the elements you want to translate</li>
                 <li>Navigate to any page on <span class="code">community.seobrein.nl</span></li>
-                <li>Enable Chrome's built-in auto-translate feature if desired (Chrome will offer to translate the page)
-                </li>
+                <li>Enable Chrome's built-in auto-translate feature if desired</li>
                 <li>This extension will automatically detect and translate elements matching your selectors</li>
-                <li>The extension works as a complement to Chrome's auto-translate, focusing on specific elements that
-                    might be missed</li>
             </ol>
         </div>
 
         <div class="section">
             <h2>Troubleshooting</h2>
             <ul>
-                <li><strong>Translations not working:</strong> Check browser console for errors (F12 → Console) and
+                <li><strong>Translations not working:</strong> Check browser console for debug logs and errors (F12 →
+                    Console) and
                     verify your CSS selectors are correct</li>
-                <li><strong>Slow performance:</strong> Large pages may take time to translate completely</li>
-                <li><strong>Mixed languages:</strong> Some content may not translate if already detected as English</li>
-                <li><strong>Service errors:</strong> The unofficial Google Translate service may occasionally be
-                    unavailable</li>
-                <li><strong>Chrome auto-translate conflicts:</strong> If Chrome auto-translate is active, this extension
-                    will only process elements that Chrome missed</li>
+                <li><strong>Have an idea for improvement?</strong> Feel free to submit a feature/pull request on
+                    <a href="https://github.com/yalpertem/seo-brein-util" target="_blank">GitHub</a>
+                </li>
             </ul>
         </div>
     </div>
