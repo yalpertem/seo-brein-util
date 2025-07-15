@@ -1,0 +1,61 @@
+name: Create Release on Version Change
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "manifest.json"
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version-changed: ${{ steps.check.outputs.changed }}
+      new-version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if version changed
+        id: check
+        run: |
+          current_version=$(jq -r '.version' manifest.json)
+
+          if git show HEAD~1:manifest.json >/dev/null 2>&1; then
+            previous_version=$(git show HEAD~1:manifest.json | jq -r '.version')
+            if [ "$current_version" != "$previous_version" ]; then
+              echo "changed=true" >> $GITHUB_OUTPUT
+              echo "version=$current_version" >> $GITHUB_OUTPUT
+              echo "Version changed from $previous_version to $current_version"
+            else
+              echo "changed=false" >> $GITHUB_OUTPUT
+              echo "Version unchanged: $current_version"
+            fi
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "version=$current_version" >> $GITHUB_OUTPUT
+            echo "First commit with manifest.json, version: $current_version"
+          fi
+
+  create-release:
+    needs: check-version
+    if: needs.check-version.outputs.version-changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.check-version.outputs.new-version }}
+          release_name: Release v${{ needs.check-version.outputs.new-version }}
+          body: |
+            Release v${{ needs.check-version.outputs.new-version }}
+
+            Changes in this release:
+            - Version updated to ${{ needs.check-version.outputs.new-version }}
+          draft: false
+          prerelease: false
