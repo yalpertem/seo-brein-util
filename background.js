@@ -57,19 +57,19 @@ function resetCounters() {
   TRANSLATIONS_FROM_API_COUNT = 0;
   TRANSLATIONS_FROM_CACHE_COUNT = 0;
   saveCounters();
-  console.log("Background: Translation counters reset");
+  console.debug("Background: Translation counters reset");
 }
 
 function incrementCacheCount() {
   TRANSLATIONS_FROM_CACHE_COUNT++;
   saveCounters();
-  console.log(
+  console.debug(
     `Background: Cache count incremented to ${TRANSLATIONS_FROM_CACHE_COUNT}`
   );
 }
 
 function logTranslationCounts() {
-  console.log(
+  console.debug(
     `Background: Translation counts - API: ${TRANSLATIONS_FROM_API_COUNT}, Cache: ${TRANSLATIONS_FROM_CACHE_COUNT}`
   );
 }
@@ -77,7 +77,7 @@ function logTranslationCounts() {
 async function clearCache() {
   try {
     await chrome.storage.local.remove(["translationCache"]);
-    console.log("Background: Translation cache cleared");
+    console.debug("Background: Translation cache cleared");
   } catch (error) {
     console.warn("Background: Failed to clear cache:", error);
   }
@@ -85,7 +85,10 @@ async function clearCache() {
 
 async function handleTranslationRequest(request, sendResponse) {
   try {
-    console.log("Background: Handling translation request for:", request.text);
+    console.debug(
+      "Background: Handling translation request for:",
+      request.text
+    );
 
     const translatedText = await translateWithGoogleCloud(
       request.text,
@@ -129,7 +132,7 @@ async function translateWithGoogleCloud(text, sourceLang, targetLang) {
     if (data && data[0] && data[0][0] && data[0][0][0]) {
       TRANSLATIONS_FROM_API_COUNT++;
       saveCounters();
-      console.log(
+      console.debug(
         `Background: API count incremented to ${TRANSLATIONS_FROM_API_COUNT}`
       );
       return data[0][0][0];
@@ -144,9 +147,9 @@ async function translateWithGoogleCloud(text, sourceLang, targetLang) {
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
-    console.log("SEO Brein Translator installed");
+    console.debug("SEO Brein Translator installed");
     chrome.runtime.openOptionsPage();
   }
 });
 
-console.log("SEO Brein Translator: Background service worker loaded");
+console.debug("SEO Brein Translator: Background service worker loaded");

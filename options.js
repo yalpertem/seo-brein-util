@@ -134,5 +134,5 @@ document.addEventListener("DOMContentLoaded", function () {
     status.classList.add("hidden");
   }
 
-  console.log("SEO Brein Translator: Options page loaded");
+  console.debug("SEO Brein Translator: Options page loaded");
 });

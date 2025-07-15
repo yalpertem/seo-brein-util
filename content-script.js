@@ -15,12 +15,12 @@ class SEOBreinTranslator {
   }
 
   async init() {
-    console.log(`[${new Date().toISOString()}] SBT: Initializing...`);
-    console.log(
+    console.debug(`[${new Date().toISOString()}] SBT: Initializing...`);
+    console.debug(
       `[${new Date().toISOString()}] SBT: Current URL:`,
       window.location.href
     );
-    console.log(
+    console.debug(
       `[${new Date().toISOString()}] SBT: Document ready state:`,
       document.readyState
     );
@@ -38,7 +38,7 @@ class SEOBreinTranslator {
     window.translator = this;
 
     if (document.readyState === "loading") {
-      console.log(
+      console.debug(
         `[${new Date().toISOString()}] SBT: Waiting for DOMContentLoaded...`
       );
       document.addEventListener("DOMContentLoaded", () =>
@@ -54,7 +54,7 @@ class SEOBreinTranslator {
       await this.translatePage();
       this.setupMutationObserver();
       this.setupPeriodicRescan();
-      console.log(
+      console.debug(
         `[${new Date().toISOString()}] SBT: Translation setup complete`
       );
     } catch (error) {
@@ -77,7 +77,7 @@ class SEOBreinTranslator {
       );
 
       if (unprocessedNodes.length > 0) {
-        console.log(
+        console.debug(
           `[${new Date().toISOString()}] SBT: Rescan ${rescanCount}/${maxRescans} - Found ${
             unprocessedNodes.length
           } new nodes`
@@ -89,7 +89,7 @@ class SEOBreinTranslator {
 
       if (rescanCount >= maxRescans) {
         clearInterval(rescanInterval);
-        console.log(
+        console.debug(
           `[${new Date().toISOString()}] SBT: Periodic rescanning complete`
         );
       }
@@ -98,7 +98,7 @@ class SEOBreinTranslator {
 
   async translatePage() {
     if (this.isTranslating) {
-      console.log(
+      console.debug(
         `[${new Date().toISOString()}] SBT: Translation already in progress, skipping...`
       );
       return;
@@ -106,19 +106,19 @@ class SEOBreinTranslator {
     this.isTranslating = true;
 
     try {
-      console.log(
+      console.debug(
         `[${new Date().toISOString()}] SBT: Starting page translation...`
       );
 
       const textNodes = this.getTextNodesFromTargets();
-      console.log(
+      console.debug(
         `[${new Date().toISOString()}] SBT: Found ${
           textNodes.length
         } text nodes to process from target elements`
       );
 
       const targetElements = this.getTargetElements();
-      console.log(
+      console.debug(
         `[${new Date().toISOString()}] SBT: Found ${
           targetElements.length
         } target elements:`,
@@ -128,7 +128,7 @@ class SEOBreinTranslator {
       );
 
       if (textNodes.length === 0) {
-        console.log(
+        console.debug(
           `[${new Date().toISOString()}] SBT: No text nodes found in target elements! This might indicate the target elements are not present on the page.`
         );
         return;
@@ -152,7 +152,7 @@ class SEOBreinTranslator {
         await this.delay(50);
       }
 
-      console.log(
+      console.debug(
         `[${new Date().toISOString()}] SBT: Translation complete. Processed: ${processedCount}, Successfully translated: ${translatedCount}`
       );
 
@@ -181,7 +181,7 @@ class SEOBreinTranslator {
     const failed = results.filter((r) => r.status === "rejected").length;
 
     if (failed > 0 || successful > 0) {
-      console.log(
+      console.debug(
         `[${new Date().toISOString()}] SBT: Batch complete. Successful: ${successful}, Failed: ${failed}`
       );
 
@@ -216,7 +216,7 @@ class SEOBreinTranslator {
     try {
       const translatedText = await this.translateText(text);
       if (translatedText && translatedText !== text) {
-        console.log(
+        console.debug(
           `[${new Date().toISOString()}] SBT: Translated: "${text.substring(
             0,
             30
@@ -285,7 +285,9 @@ class SEOBreinTranslator {
         this.translationCache = new Map(
           Object.entries(result.translationCache)
         );
-        console.log(`Loaded ${this.translationCache.size} cached translations`);
+        console.debug(
+          `Loaded ${this.translationCache.size} cached translations`
+        );
       }
       this.cacheLoaded = true;
     } catch (error) {
@@ -307,7 +309,7 @@ class SEOBreinTranslator {
     try {
       this.translationCache.clear();
       await chrome.storage.local.remove(["translationCache"]);
-      console.log("Translation cache cleared");
+      console.debug("Translation cache cleared");
     } catch (error) {
       console.warn("Failed to clear cache:", error);
     }
@@ -433,7 +435,7 @@ class SEOBreinTranslator {
       });
 
       if (newTextNodes.length > 0) {
-        console.log(
+        console.debug(
           `[${new Date().toISOString()}] SBT: Found ${
             newTextNodes.length
           } new text nodes in target elements`
@@ -448,7 +450,7 @@ class SEOBreinTranslator {
       subtree: true,
     });
 
-    console.log(
+    console.debug(
       `[${new Date().toISOString()}] SBT: Mutation observer set up for dynamic content`
     );
   }
@@ -483,7 +485,7 @@ class SEOBreinTranslator {
   }
 
   async forceRetranslate() {
-    console.log(
+    console.debug(
       `[${new Date().toISOString()}] SBT: Force re-translation triggered`
     );
     this.processedNodes = new WeakSet();
@@ -521,7 +523,7 @@ class SEOBreinTranslator {
         Array.isArray(result.selectorsToTranslate)
       ) {
         this.selectorsToTranslate = result.selectorsToTranslate;
-        console.log(
+        console.debug(
           `[${new Date().toISOString()}] SBT: Loaded selectors:`,
           this.selectorsToTranslate
         );
@@ -535,7 +537,7 @@ class SEOBreinTranslator {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === "updateSelectors") {
         this.selectorsToTranslate = request.selectors;
-        console.log(
+        console.debug(
           `[${new Date().toISOString()}] SBT: Updated selectors:`,
           this.selectorsToTranslate
         );
