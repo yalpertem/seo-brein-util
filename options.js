@@ -46,11 +46,16 @@ document.addEventListener("DOMContentLoaded", function () {
   async function loadSettings() {
     try {
       const result = await chrome.storage.local.get(["selectorsToTranslate"]);
-      const selectors = result.selectorsToTranslate || ["div.post__post"];
+      const selectors = result.selectorsToTranslate || [
+        "div.post--parent",
+        "div.post__content",
+        "div.post__body",
+      ];
       selectorsInput.value = selectors.join("\n");
     } catch (error) {
       console.error("Failed to load settings:", error);
-      selectorsInput.value = "div.post__post";
+      selectorsInput.value =
+        "div.post--parent\ndiv.post__content\ndiv.post__body";
     }
   }
 
