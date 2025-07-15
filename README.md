@@ -20,6 +20,17 @@ Google Translate is able to translate most of the content, but some parts are no
 3. The default selector is `div.post__post` but you can add more as needed
 4. Click "Save Settings" to apply changes
 
+## Local Installation
+
+1. Download the code from GitHub:
+   - Click the green "Code" button on the repository page
+   - Select "Download ZIP" or clone using: `git clone https://github.com/yalpertem/seo-brein-util.git`
+2. Extract the files to a folder on your computer
+3. Open Chrome and navigate to `chrome://extensions/`
+4. Enable "Developer mode" using the toggle in the top right
+5. Click "Load unpacked" and select the folder containing the extension files
+6. The extension will now appear in your Chrome extensions list
+
 ## Usage
 
 - Enable Chrome's auto-translate feature for the best experience
