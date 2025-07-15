@@ -22,12 +22,14 @@ document.addEventListener("DOMContentLoaded", function () {
   // Load settings from storage
   async function loadSettings() {
     try {
-      const result = await chrome.storage.sync.get(["googleTranslateApiKey"]);
+      const result = await chrome.storage.sync.get([
+        "sbtGoogleTranslateApiKey",
+      ]);
       if (
-        result.googleTranslateApiKey &&
-        result.googleTranslateApiKey !== "YOUR_API_KEY_HERE"
+        result.sbtGoogleTranslateApiKey &&
+        result.sbtGoogleTranslateApiKey !== "YOUR_API_KEY_HERE"
       ) {
-        apiKeyInput.value = result.googleTranslateApiKey;
+        apiKeyInput.value = result.sbtGoogleTranslateApiKey;
       }
     } catch (error) {
       console.error("Failed to load settings:", error);
@@ -52,7 +54,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       await chrome.storage.sync.set({
-        googleTranslateApiKey: apiKey || "",
+        sbtGoogleTranslateApiKey: apiKey || "",
       });
 
       showStatus("Settings saved successfully!", "success");

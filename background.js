@@ -1,14 +1,7 @@
-/**
- * SEO Brein Translator - Background Service Worker
- * Handles fallback translation using Google Cloud Translate API
- */
-
-// Translation counters
 let TRANSLATIONS_FROM_API_COUNT = 0;
 let TRANSLATIONS_FROM_CACHE_COUNT = 0;
 let countersLoaded = false;
 
-// Load counters from storage
 async function loadCounters() {
   try {
     const result = await chrome.storage.local.get(["translationCounters"]);
@@ -23,7 +16,6 @@ async function loadCounters() {
   }
 }
 
-// Save counters to storage
 async function saveCounters() {
   try {
     await chrome.storage.local.set({
@@ -37,10 +29,8 @@ async function saveCounters() {
   }
 }
 
-// Initialize counters
 loadCounters();
 
-// TODO: Add your Google Cloud Translate API key here
 const GOOGLE_TRANSLATE_API_KEY = "YOUR_API_KEY_HERE";
 const GOOGLE_TRANSLATE_URL =
   "https://translate.googleapis.com/translate_a/single";
@@ -134,8 +124,8 @@ async function handleTranslationRequest(request, sendResponse) {
 
 async function getStoredApiKey() {
   try {
-    const result = await chrome.storage.sync.get(["googleTranslateApiKey"]);
-    return result.googleTranslateApiKey || GOOGLE_TRANSLATE_API_KEY;
+    const result = await chrome.storage.sync.get(["sbtGoogleTranslateApiKey"]);
+    return result.sbtGoogleTranslateApiKey || GOOGLE_TRANSLATE_API_KEY;
   } catch (error) {
     console.warn("Background: Failed to get stored API key:", error);
     return GOOGLE_TRANSLATE_API_KEY;

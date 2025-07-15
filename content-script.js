@@ -1,8 +1,3 @@
-/**
- * SEO Brein Translator - Content Script
- * Automatically translates Dutch content to English on community.seobrein.nl
- */
-
 class SEOBreinTranslator {
   constructor() {
     this.translator = null;
@@ -13,45 +8,36 @@ class SEOBreinTranslator {
     this.cacheLoaded = false;
     this.cacheDirty = false;
     this.saveTimeout = null;
-    this.maxCacheSize = 1000;
+    this.maxCacheSize = 2000;
 
-    // Target selectors for elements to translate
-    this.targetSelectors = ["div.post__body"];
-
-    // Initialize translation when page loads
+    this.selectorsToTranslate = ["div.post__body"];
     this.init();
   }
 
   async init() {
+    console.log(`[${new Date().toISOString()}] SBT: Initializing...`);
     console.log(
-      `[${new Date().toISOString()}] SEO Brein Translator: Initializing...`
-    );
-    console.log(
-      `[${new Date().toISOString()}] SEO Brein Translator: Current URL:`,
+      `[${new Date().toISOString()}] SBT: Current URL:`,
       window.location.href
     );
     console.log(
-      `[${new Date().toISOString()}] SEO Brein Translator: Document ready state:`,
+      `[${new Date().toISOString()}] SBT: Document ready state:`,
       document.readyState
     );
 
-    // Load cache from storage first
     await this.loadCacheFromStorage();
 
-    // Reset translation counters
     try {
       chrome.runtime.sendMessage({ action: "resetCounters" });
     } catch (error) {
       console.warn("Failed to reset counters:", error);
     }
 
-    // Make translator globally accessible for debugging
     window.translator = this;
 
-    // Wait for page to be fully loaded
     if (document.readyState === "loading") {
       console.log(
-        `[${new Date().toISOString()}] SEO Brein Translator: Waiting for DOMContentLoaded...`
+        `[${new Date().toISOString()}] SBT: Waiting for DOMContentLoaded...`
       );
       document.addEventListener("DOMContentLoaded", () =>
         this.startTranslation()
@@ -63,38 +49,26 @@ class SEOBreinTranslator {
 
   async startTranslation() {
     try {
-      // Try to initialize Chrome's built-in Translation API
-      await this.initializeTranslator();
-
-      // Translate existing content
       await this.translatePage();
-
-      // Set up observer for dynamic content
       this.setupMutationObserver();
-
-      // Add periodic re-scan for feeds that load content dynamically
       this.setupPeriodicRescan();
-
       console.log(
-        `[${new Date().toISOString()}] SEO Brein Translator: Translation setup complete`
+        `[${new Date().toISOString()}] SBT: Translation setup complete`
       );
     } catch (error) {
       console.error(
-        `[${new Date().toISOString()}] SEO Brein Translator: Error during initialization:`,
+        `[${new Date().toISOString()}] SBT: Error during initialization:`,
         error
       );
     }
   }
 
   setupPeriodicRescan() {
-    // Rescan the page every 5 seconds for the first minute to catch dynamically loaded content
     let rescanCount = 0;
-    const maxRescans = 6; // Reduced from 12 to 6 for less console spam
+    const maxRescans = 6;
 
     const rescanInterval = setInterval(async () => {
       rescanCount++;
-
-      // Get all text nodes from target elements and see if there are new ones to translate
       const allTextNodes = this.getTextNodesFromTargets();
       const unprocessedNodes = allTextNodes.filter(
         (node) => !this.processedNodes.has(node)
@@ -102,63 +76,28 @@ class SEOBreinTranslator {
 
       if (unprocessedNodes.length > 0) {
         console.log(
-          `[${new Date().toISOString()}] SEO Brein Translator: Rescan ${rescanCount}/${maxRescans} - Found ${
+          `[${new Date().toISOString()}] SBT: Rescan ${rescanCount}/${maxRescans} - Found ${
             unprocessedNodes.length
           } new nodes`
         );
-        // Process only 1 batch during rescans
         const batch = unprocessedNodes.slice(0, 20);
         await this.processBatch(batch);
-
-        // Mark all remaining unprocessed nodes as processed to prevent infinite rescanning
         unprocessedNodes.forEach((node) => this.processedNodes.add(node));
       }
 
       if (rescanCount >= maxRescans) {
         clearInterval(rescanInterval);
         console.log(
-          `[${new Date().toISOString()}] SEO Brein Translator: Periodic rescanning complete`
+          `[${new Date().toISOString()}] SBT: Periodic rescanning complete`
         );
       }
     }, 5000);
   }
 
-  async initializeTranslator() {
-    try {
-      // Check if Chrome's Translation API is available
-      if (window.translation && window.translation.createTranslator) {
-        console.log(
-          `[${new Date().toISOString()}] SEO Brein Translator: Using Chrome Translation API`
-        );
-        this.translator = await window.translation.createTranslator({
-          sourceLanguage: "auto", // Auto-detect source language
-          targetLanguage: "en", // Translate to English
-        });
-
-        // Wait for translator to be ready
-        await this.translator.ready;
-        console.log(
-          `[${new Date().toISOString()}] SEO Brein Translator: Chrome translator ready`
-        );
-      } else {
-        console.log(
-          `[${new Date().toISOString()}] SEO Brein Translator: Chrome Translation API not available, using fallback`
-        );
-        this.translator = null;
-      }
-    } catch (error) {
-      console.warn(
-        `[${new Date().toISOString()}] SEO Brein Translator: Failed to initialize Chrome translator, using fallback:`,
-        error
-      );
-      this.translator = null;
-    }
-  }
-
   async translatePage() {
     if (this.isTranslating) {
       console.log(
-        `[${new Date().toISOString()}] SEO Brein Translator: Translation already in progress, skipping...`
+        `[${new Date().toISOString()}] SBT: Translation already in progress, skipping...`
       );
       return;
     }
@@ -166,13 +105,13 @@ class SEOBreinTranslator {
 
     try {
       console.log(
-        `[${new Date().toISOString()}] SEO Brein Translator: Starting page translation...`
+        `[${new Date().toISOString()}] SBT: Starting page translation...`
       );
 
       // Get all text nodes from target elements only
       const textNodes = this.getTextNodesFromTargets();
       console.log(
-        `[${new Date().toISOString()}] SEO Brein Translator: Found ${
+        `[${new Date().toISOString()}] SBT: Found ${
           textNodes.length
         } text nodes to process from target elements`
       );
@@ -180,7 +119,7 @@ class SEOBreinTranslator {
       // Log target elements found for debugging
       const targetElements = this.getTargetElements();
       console.log(
-        `[${new Date().toISOString()}] SEO Brein Translator: Found ${
+        `[${new Date().toISOString()}] SBT: Found ${
           targetElements.length
         } target elements:`,
         targetElements.map(
@@ -190,7 +129,7 @@ class SEOBreinTranslator {
 
       if (textNodes.length === 0) {
         console.warn(
-          `[${new Date().toISOString()}] SEO Brein Translator: No text nodes found in target elements! This might indicate the target elements are not present on the page.`
+          `[${new Date().toISOString()}] SBT: No text nodes found in target elements! This might indicate the target elements are not present on the page.`
         );
         return;
       }
@@ -217,7 +156,7 @@ class SEOBreinTranslator {
       }
 
       console.log(
-        `[${new Date().toISOString()}] SEO Brein Translator: Translation complete. Processed: ${processedCount}, Successfully translated: ${translatedCount}`
+        `[${new Date().toISOString()}] SBT: Translation complete. Processed: ${processedCount}, Successfully translated: ${translatedCount}`
       );
 
       // Log translation counts
@@ -228,7 +167,7 @@ class SEOBreinTranslator {
       }
     } catch (error) {
       console.error(
-        `[${new Date().toISOString()}] SEO Brein Translator: Error during page translation:`,
+        `[${new Date().toISOString()}] SBT: Error during page translation:`,
         error
       );
     } finally {
@@ -240,19 +179,16 @@ class SEOBreinTranslator {
     const promises = textNodes.map((node) => this.translateTextNode(node));
     const results = await Promise.allSettled(promises);
 
-    // Count successful translations for debugging
     const successful = results.filter(
       (r) => r.status === "fulfilled" && r.value
     ).length;
     const failed = results.filter((r) => r.status === "rejected").length;
 
-    // Only log if there were failures or successful translations
     if (failed > 0 || successful > 0) {
       console.log(
-        `[${new Date().toISOString()}] SEO Brein Translator: Batch complete. Successful: ${successful}, Failed: ${failed}`
+        `[${new Date().toISOString()}] SBT: Batch complete. Successful: ${successful}, Failed: ${failed}`
       );
 
-      // Log translation counts after each batch
       if (successful > 0) {
         try {
           chrome.runtime.sendMessage({ action: "logCounts" });
@@ -272,13 +208,12 @@ class SEOBreinTranslator {
 
     const text = node.textContent.trim();
     if (!text || text.length < 3) {
-      this.processedNodes.add(node); // Mark as processed even if skipped
+      this.processedNodes.add(node);
       return false;
     }
 
-    // Skip if text appears to be already in English or contains mostly numbers/symbols
     if (this.isLikelyEnglish(text)) {
-      this.processedNodes.add(node); // Mark as processed even if skipped
+      this.processedNodes.add(node);
       return false;
     }
 
@@ -286,7 +221,7 @@ class SEOBreinTranslator {
       const translatedText = await this.translateText(text);
       if (translatedText && translatedText !== text) {
         console.log(
-          `[${new Date().toISOString()}] SEO Brein Translator: Translated: "${text.substring(
+          `[${new Date().toISOString()}] SBT: Translated: "${text.substring(
             0,
             30
           )}..." -> "${translatedText.substring(0, 30)}..."`
@@ -295,21 +230,20 @@ class SEOBreinTranslator {
         this.processedNodes.add(node);
         return true;
       }
-      this.processedNodes.add(node); // Mark as processed even if translation failed
+      this.processedNodes.add(node);
       return false;
     } catch (error) {
       console.warn(
-        `[${new Date().toISOString()}] SEO Brein Translator: Failed to translate text:`,
+        `[${new Date().toISOString()}] SBT: Failed to translate text:`,
         text.substring(0, 50),
         error
       );
-      this.processedNodes.add(node); // Mark as processed even if error occurred
+      this.processedNodes.add(node);
       return false;
     }
   }
 
   async translateText(text) {
-    // Check cache first
     if (this.translationCache.has(text)) {
       try {
         chrome.runtime.sendMessage({ action: "incrementCacheCount" });
@@ -319,30 +253,11 @@ class SEOBreinTranslator {
       return this.translationCache.get(text);
     }
 
-    let translatedText;
+    const translatedText = await this.fallbackTranslate(text);
 
-    if (this.translator) {
-      // Use Chrome's Translation API
-      try {
-        const result = await this.translator.translate(text);
-        translatedText = result.translatedText;
-      } catch (error) {
-        console.warn(
-          "SEO Brein Translator: Chrome API translation failed, trying fallback:",
-          error
-        );
-        translatedText = await this.fallbackTranslate(text);
-      }
-    } else {
-      // Use fallback translation
-      translatedText = await this.fallbackTranslate(text);
-    }
-
-    // Cache the result
     if (translatedText) {
       this.translationCache.set(text, translatedText);
 
-      // Limit cache size
       if (this.translationCache.size > this.maxCacheSize) {
         const firstKey = this.translationCache.keys().next().value;
         this.translationCache.delete(firstKey);
@@ -434,7 +349,6 @@ class SEOBreinTranslator {
     const textNodes = [];
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
       acceptNode: (node) => {
-        // Skip script, style, and other non-visible elements
         const parent = node.parentElement;
         if (!parent) return NodeFilter.FILTER_REJECT;
 
@@ -443,7 +357,6 @@ class SEOBreinTranslator {
           return NodeFilter.FILTER_REJECT;
         }
 
-        // Skip if parent is hidden
         const computedStyle = window.getComputedStyle(parent);
         if (
           computedStyle.display === "none" ||
@@ -466,7 +379,7 @@ class SEOBreinTranslator {
 
   getTargetElements() {
     const targetElements = [];
-    this.targetSelectors.forEach((selector) => {
+    this.selectorsToTranslate.forEach((selector) => {
       const elements = document.querySelectorAll(selector);
       targetElements.push(...elements);
     });
@@ -528,7 +441,7 @@ class SEOBreinTranslator {
 
       if (newTextNodes.length > 0) {
         console.log(
-          `[${new Date().toISOString()}] SEO Brein Translator: Found ${
+          `[${new Date().toISOString()}] SBT: Found ${
             newTextNodes.length
           } new text nodes in target elements`
         );
@@ -544,14 +457,16 @@ class SEOBreinTranslator {
     });
 
     console.log(
-      `[${new Date().toISOString()}] SEO Brein Translator: Mutation observer set up for dynamic content`
+      `[${new Date().toISOString()}] SBT: Mutation observer set up for dynamic content`
     );
   }
 
   isWithinTargetElement(node) {
     let current = node.parentElement;
     while (current) {
-      if (this.targetSelectors.some((selector) => current.matches(selector))) {
+      if (
+        this.selectorsToTranslate.some((selector) => current.matches(selector))
+      ) {
         return true;
       }
       current = current.parentElement;
@@ -561,12 +476,10 @@ class SEOBreinTranslator {
 
   getTargetElementsFromNode(node) {
     const targetElements = [];
-    this.targetSelectors.forEach((selector) => {
-      // Check if the node itself matches
+    this.selectorsToTranslate.forEach((selector) => {
       if (node.matches && node.matches(selector)) {
         targetElements.push(node);
       }
-      // Check for child elements that match
       const childElements = node.querySelectorAll(selector);
       targetElements.push(...childElements);
     });
@@ -579,28 +492,26 @@ class SEOBreinTranslator {
 
   async forceRetranslate() {
     console.log(
-      `[${new Date().toISOString()}] SEO Brein Translator: Force re-translation triggered`
+      `[${new Date().toISOString()}] SBT: Force re-translation triggered`
     );
-    this.processedNodes = new WeakSet(); // Clear processed nodes
-    this.translationCache.clear(); // Clear cache
+    this.processedNodes = new WeakSet();
+    this.translationCache.clear();
     await this.translatePage();
   }
 
-  // Get translation stats for debugging
   getStats() {
     const allTextNodes = this.getTextNodesFromTargets();
     const targetElements = this.getTargetElements();
     return {
       totalTextNodes: allTextNodes.length,
       targetElements: targetElements.length,
-      targetSelectors: this.targetSelectors,
+      selectorsToTranslate: this.selectorsToTranslate,
       cacheSize: this.translationCache.size,
       isTranslating: this.isTranslating,
       hasTranslator: !!this.translator,
     };
   }
 
-  // Cleanup method (called when page unloads)
   destroy() {
     if (this.observer) {
       this.observer.disconnect();
@@ -611,10 +522,8 @@ class SEOBreinTranslator {
   }
 }
 
-// Initialize the translator when the script loads
 const translator = new SEOBreinTranslator();
 
-// Cleanup on page unload
 window.addEventListener("beforeunload", () => {
   translator.destroy();
 });
