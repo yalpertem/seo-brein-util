@@ -10,7 +10,7 @@ class SEOBreinTranslator {
     this.saveTimeout = null;
     this.maxCacheSize = 2000;
 
-    this.selectorsToTranslate = ["div.post__body"];
+    this.selectorsToTranslate = ["div.post__post"];
     this.init();
   }
 
@@ -126,7 +126,7 @@ class SEOBreinTranslator {
       );
 
       if (textNodes.length === 0) {
-        console.warn(
+        console.log(
           `[${new Date().toISOString()}] SBT: No text nodes found in target elements! This might indicate the target elements are not present on the page.`
         );
         return;
