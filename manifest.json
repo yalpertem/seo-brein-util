@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "SEO Brein Translator",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "A companion to Chrome's translation features for translating community.seobrein.nl content to English.",
     "permissions": [
         "storage",
