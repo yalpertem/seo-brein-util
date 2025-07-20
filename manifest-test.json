@@ -5,7 +5,7 @@
     "description": "Automatically translates community.seobrein.nl content to English using Chrome's Translation API - TEST MODE",
     "permissions": [
         "storage",
-        "activeTab"
+        "tabs"
     ],
     "host_permissions": [
         "https://community.seobrein.nl/*",
